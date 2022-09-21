@@ -1,0 +1,16 @@
+{
+  "name": "trading-view-scraper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mathieuc/tradingview": "^3.3.3",
+    "date-fns": "^2.29.3"
+  }
+}

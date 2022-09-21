@@ -6,12 +6,13 @@
   "scripts": {
     "start": "node index.js"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@mathieuc/tradingview": "^3.3.3",
-    "async-batch": "^1.1.2",
+    "async": "^3.2.4",
     "date-fns": "^2.29.3"
   }
 }

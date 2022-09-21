@@ -1,6 +1,7 @@
-const TradingView = require('@mathieuc/tradingview');
-const sub = require('date-fns/sub');
-const fs = require('fs');
+import TradingView from '@mathieuc/tradingview';
+import { sub } from 'date-fns';
+import fs from 'fs';
+import async from 'async';
 
 const client = new TradingView.Client();
 
@@ -54,8 +55,7 @@ function fetchChartData({ symbol, subtracted }, resolve, reject) {
   });
   chart.onUpdate(() => {
     clearTimeout(defaultTimeout);
-    if (!chart.periods[0])
-      return;
+    if (!chart.periods[0]) return;
     const response = {
       time: new Date(chart.periods[0].time * 1000),
       pct: chart.periods[0].close,
@@ -65,7 +65,7 @@ function fetchChartData({ symbol, subtracted }, resolve, reject) {
       description: chart.infos.description,
       subtracted,
       ...response,
-      url: `https://www.tradingview.com/chart/?symbol=INTOTHEBLOCK:${symbol.toUpperCase()}_WHALESPERCENTAGE`
+      url: `https://www.tradingview.com/chart/?symbol=INTOTHEBLOCK:${symbol.toUpperCase()}_WHALESPERCENTAGE`,
     });
   });
   chart.setMarket(`INTOTHEBLOCK:${symbol.toUpperCase()}_WHALESPERCENTAGE`, {
@@ -75,19 +75,38 @@ function fetchChartData({ symbol, subtracted }, resolve, reject) {
   });
 }
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 (async () => {
   try {
-    const cryptos = fs.readFileSync('./cryptos.txt', 'utf-8').split(/\r?\n/).filter(Boolean);
+    const cryptos = fs
+      .readFileSync('./cryptos.txt', 'utf-8')
+      .split(/\r?\n/)
+      .filter(Boolean);
     console.log(`✨ Fetching data for ${cryptos.length} cryptos...`);
-    const pcts = await Promise.all(
-      cryptos.map((crypto) =>
-        fetchPercentagesForCrypto(crypto).then(formatPctForCrypto)
-      )
+    let i = 0;
+    console.time('Fetching cryptos');
+    async.mapLimit(
+      cryptos,
+      2,
+      async (crypto) => {
+        console.timeLog('Fetching cryptos', ++i);
+        const result = await fetchPercentagesForCrypto(crypto);
+        await delay(1000);
+        return formatPctForCrypto(result);
+      },
+      (err, results) => {
+        if (err) throw err;
+        // results is now an array of the response bodies
+        fs.writeFileSync('./whales.json', JSON.stringify(results, null, 2));
+        console.log(`🚀 File whales.json generated for ${cryptos.length} cryptos!`);
+        console.timeEnd('Fetching cryptos');
+        process.exit();
+      }
     );
-    fs.writeFileSync('./whales.json', JSON.stringify(pcts, null, 2));
-    console.log(`🚀 File whales.json generated for ${cryptos.length} cryptos!`);
-    client.end();
   } catch (error) {
     console.error('Error fetching percentages for crypto:', error);
+  } finally {
+    client.end();
   }
 })();

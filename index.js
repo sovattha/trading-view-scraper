@@ -3,9 +3,8 @@ import { sub } from 'date-fns';
 import fs from 'fs';
 import async from 'async';
 
-const client = new TradingView.Client();
-
 async function fetchPercentagesForCrypto(symbol) {
+  const client = new TradingView.Client();
   const queries = [
     { symbol, subtracted: { days: 0 } },
     { symbol, subtracted: { days: 7 } },
@@ -14,8 +13,10 @@ async function fetchPercentagesForCrypto(symbol) {
     { symbol, subtracted: { years: 1 } },
     { symbol, subtracted: { years: 2 } },
     { symbol, subtracted: { years: 3 } },
-  ].map((query) => fetchPercentage(query));
-  return Promise.allSettled(queries);
+  ].map((query) => fetchPercentage(query, client));
+  const pcts = await Promise.allSettled(queries);
+  client.end();
+  return pcts;
 }
 
 function formatPctForCrypto(prices) {
@@ -35,23 +36,24 @@ function formatPctForCrypto(prices) {
   };
 }
 
-async function fetchPercentage(query) {
+async function fetchPercentage(query, client) {
   return new Promise((resolve, reject) => {
-    fetchChartData(query, resolve, reject);
+    fetchChartData(query, client, resolve, reject);
   });
 }
 
-function fetchChartData({ symbol, subtracted }, resolve, reject) {
+function fetchChartData({ symbol, subtracted }, client, resolve, reject) {
   const defaultTimeout = setTimeout(() => {
     reject({
       subtracted,
       error: `Timeout for ${JSON.stringify(subtracted)}`,
     });
-  }, 2000);
+  }, 5000);
   const chart = new client.Session.Chart();
   chart.onError((...err) => {
     // Listen for errors (can avoid crash)
-    console.error('Chart error:', ...err);
+    console.error('Chart error:', symbol, ...err);
+    fs.appendFileSync('./invalid-cryptos.txt', `${symbol} ${err}\r\n`);
   });
   chart.onUpdate(() => {
     clearTimeout(defaultTimeout);
@@ -67,6 +69,7 @@ function fetchChartData({ symbol, subtracted }, resolve, reject) {
       ...response,
       url: `https://www.tradingview.com/chart/?symbol=INTOTHEBLOCK:${symbol.toUpperCase()}_WHALESPERCENTAGE`,
     });
+    chart.close;
   });
   chart.setMarket(`INTOTHEBLOCK:${symbol.toUpperCase()}_WHALESPERCENTAGE`, {
     timeframe: '1D',
@@ -79,6 +82,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 (async () => {
   try {
+    fs.truncateSync('./invalid-cryptos.txt', 0);
     const cryptos = fs
       .readFileSync('./cryptos.txt', 'utf-8')
       .split(/\r?\n/)
@@ -88,12 +92,13 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
     console.time('Fetching cryptos');
     async.mapLimit(
       cryptos,
-      2,
+      5, // Do not raise this number as it leads to rate limit errors
       async (crypto) => {
-        console.timeLog('Fetching cryptos', ++i);
         const result = await fetchPercentagesForCrypto(crypto);
-        await delay(1000);
-        return formatPctForCrypto(result);
+        // await delay(2000); // If need be, delay can help staying under the rate limit
+        const formattedResult = formatPctForCrypto(result);
+        console.timeLog('Fetching cryptos', ++i, crypto);
+        return formattedResult;
       },
       (err, results) => {
         if (err) throw err;
@@ -106,7 +111,5 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
     );
   } catch (error) {
     console.error('Error fetching percentages for crypto:', error);
-  } finally {
-    client.end();
   }
 })();

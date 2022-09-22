@@ -5,9 +5,9 @@
   "main": "index.js",
   "bin": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "npx pkg . -t node14-win-x64"
   },
-  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",

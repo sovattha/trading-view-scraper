@@ -1,0 +1,38 @@
+[
+  {
+    "symbol": "KCS",
+    "description": "KuCoin Token: The percentage of assets belonging to Whales",
+    "day_0": 0.967707,
+    "day_7": 0.967707,
+    "day_30": 0.967707,
+    "day_90": 0.973586,
+    "year_1": 0.973586,
+    "year_2": 0.961971,
+    "year_3": 0.967232,
+    "url": "https://www.tradingview.com/chart/?symbol=INTOTHEBLOCK:KCS_WHALESPERCENTAGE"
+  },
+  {
+    "symbol": "BEST",
+    "description": "Bitpanda Ecosystem Token: The percentage of assets belonging to Whales",
+    "day_0": 0.988161,
+    "day_7": 0.98816,
+    "day_30": 0.988187,
+    "day_90": 0.988255,
+    "year_1": 0.985324,
+    "year_2": 0.989747,
+    "year_3": 0.994204,
+    "url": "https://www.tradingview.com/chart/?symbol=INTOTHEBLOCK:BEST_WHALESPERCENTAGE"
+  },
+  {
+    "symbol": "CRO",
+    "description": "Crypto.Com Chain Token (Cro): The percentage of assets belonging to Whales",
+    "day_0": 0.895165,
+    "day_7": 0.894936,
+    "day_30": 0.894126,
+    "day_90": 0.887805,
+    "year_1": 0.845464,
+    "year_2": 0.912317,
+    "year_3": 0.927108,
+    "url": "https://www.tradingview.com/chart/?symbol=INTOTHEBLOCK:CRO_WHALESPERCENTAGE"
+  }
+]

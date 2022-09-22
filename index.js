@@ -1,8 +1,13 @@
-import TradingView from '@mathieuc/tradingview';
-import { sub } from 'date-fns';
-import fs from 'fs';
-import async from 'async';
+const TradingView = require('@mathieuc/tradingview');
+const { sub } = require('date-fns');
+const fs = require('fs');
+const async = require('async');
+const { block } = require('./block.js')
 
+/**
+ * Instantiate a new Trading View client and fetch the whales percentages for the given symbol.
+ * @param symbol Symbol to fetch
+ */
 async function fetchPercentagesForCrypto(symbol) {
   const client = new TradingView.Client();
   const queries = [
@@ -19,8 +24,13 @@ async function fetchPercentagesForCrypto(symbol) {
   return pcts;
 }
 
-function formatPctForCrypto(prices) {
-  const pcts = prices.filter((p) => p.status === 'fulfilled');
+/**
+ * Format the percentages for a given result.
+ * Only the results which are resolved successfully are formatted.
+ * @param  {} result
+ */
+function formatPctForCrypto(result) {
+  const pcts = result.filter((p) => p.status === 'fulfilled');
   if (!pcts?.[0]?.value?.symbol) return;
   return {
     symbol: pcts[0].value.symbol,
@@ -36,12 +46,25 @@ function formatPctForCrypto(prices) {
   };
 }
 
+/**
+ * Wrap the function fetchChartData in a promise.
+ * @param  {} query
+ * @param  {} client
+ */
 async function fetchPercentage(query, client) {
   return new Promise((resolve, reject) => {
     fetchChartData(query, client, resolve, reject);
   });
 }
 
+/**
+ * Fetch the data for a given symbol and given date.
+ * @param  {} {symbol
+ * @param  {} subtracted}
+ * @param  {} client
+ * @param  {} resolve
+ * @param  {} reject
+ */
 function fetchChartData({ symbol, subtracted }, client, resolve, reject) {
   const defaultTimeout = setTimeout(() => {
     reject({
@@ -80,6 +103,12 @@ function fetchChartData({ symbol, subtracted }, client, resolve, reject) {
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
+/**
+ * Main function.
+ * Will fetch the given cryptos corresponding to the file cryptos.txt.
+ * Create a whales.json file and a invalid-cryptos.txt file.
+ * See README for details.
+ */
 (async () => {
   try {
     fs.truncateSync('./invalid-cryptos.txt', 0);
@@ -102,7 +131,6 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
       },
       (err, results) => {
         if (err) throw err;
-        // results is now an array of the response bodies
         fs.writeFileSync('./whales.json', JSON.stringify(results, null, 2));
         console.log(`🚀 File whales.json generated for ${cryptos.length} cryptos!`);
         console.timeEnd('Fetching cryptos');
